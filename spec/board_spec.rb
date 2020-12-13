@@ -40,4 +40,12 @@ describe Board do
       expect(board.array).to eq([%i(x x . x)])
     end
   end
+
+  context 'simple death' do
+    let(:board_string) { 'x x' }
+    specify 'all die' do
+      board.remove_captures!
+      expect(board.array).to eq([%i(. .)])
+    end
+  end
 end
