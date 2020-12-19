@@ -48,4 +48,45 @@ describe Board do
       expect(board.array).to eq([%i(. .)])
     end
   end
+
+  context 'vertical life' do
+    let(:board_string) { "x\n." }
+    specify 'all live' do
+      board.remove_captures!
+      expect(board.array).to eq([%i(x), %i(.)])
+    end
+  end
+
+  context 'complex' do
+    let(:board_string) { <<END }
+o o . x
+x o o x
+o x x x
+x o o o
+END
+    specify do
+      board.remove_captures!
+      expect(board.to_s).to eq(<<END.strip)
+o o . x
+. o o x
+o x x x
+. o o o
+Black to play.
+END
+    end
+
+    context 'white to play' do
+      let(:next_player) { Board::White }
+      specify do
+        board.remove_captures!
+        expect(board.to_s).to eq(<<END.strip)
+o o . x
+x o o x
+. x x x
+x . . .
+White to play.
+END
+      end
+    end
+  end
 end

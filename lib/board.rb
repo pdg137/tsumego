@@ -85,26 +85,68 @@ class Board
   end
 
   def remove_captures_of!(player)
-    @array.each_with_index do |row, row_index|
-      chunks = row.chunk(&:itself).to_a
+    group_identity = {}
+    groups_alive = {}
+    groups = []
+    next_group = 0
 
-      new_row = []
-      chunks.each_with_index do |chunk, index|
-        value = chunk[0]
-        length = chunk[1].length
+    # 1 pass to determine groups and life/death
+    @array.each_with_index do |row, y|
+      groups[y] = []
+      row.each_with_index do |value, x|
+        if value != player
+          groups[y][x] = nil
+          next
+        end
 
-        if value != player ||
-           index > 0 && chunks[index - 1][0] == Open ||
-           index < chunks.length - 1 && chunks[index + 1][0] == Open
-          # alive
-          length.times { new_row << value }
-        else
-          # dead
-          length.times { new_row << Open }
+        # check for groups up and left
+        up_group = y>0 && group_identity[groups[y-1][x]]
+        left_group = x>0 && group_identity[groups[y][x-1]]
+
+        # copy left by default
+        my_group = left_group || up_group
+
+        # maybe identify groups
+        if my_group && up_group && my_group != up_group
+          group_identity.keys.each do |old_group|
+            if up_group == group_identity[old_group]
+              # found an old group to identify
+              group_identity[old_group] = my_group
+              groups_alive[my_group] ||= groups_alive[old_group]
+            end
+          end
+        end
+
+        # new group?
+        if !my_group
+          my_group = next_group
+          next_group += 1
+          group_identity[my_group] = my_group
+        end
+
+        # record group
+        groups[y][x] = my_group
+
+        # check for life
+        if y > 0 && [Open, Closed].include?(self[x, y-1]) ||
+           x > 0 && [Open, Closed].include?(self[x-1, y]) ||
+           y+1 < @height && [Open, Closed].include?(self[x, y+1]) ||
+           x+1 < @width && [Open, Closed].include?(self[x+1, y])
+          groups_alive[my_group] = true
         end
       end
+    end
 
-      @array[row_index] = new_row
+    @array.each_with_index do |row, y|
+      row.each_with_index do |value, x|
+        next if player != self[x, y]
+
+        group = group_identity[groups[y][x]]
+        alive = groups_alive[group]
+        if !alive
+          self[x, y] = Open
+        end
+      end
     end
   end
 
