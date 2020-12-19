@@ -40,6 +40,10 @@ class Board
     @black_to_play ? Black : White
   end
 
+  def to_play=(value)
+    @black_to_play = value == Black
+  end
+
   def not_to_play
     @black_to_play ? White : Black
   end
@@ -159,10 +163,17 @@ class Board
   def each_move
     each_open_point do |x, y|
       new_board = Board.new
+      new_board.height = height
+      new_board.width = width
       new_board.black_to_play = !black_to_play
       new_board.array = Marshal.load(Marshal.dump(array))
+
       new_board[x, y] = to_play
       new_board.remove_captures!
+      if new_board[x, y] != to_play
+        next # suicide
+      end
+
       yield(x, y, new_board)
     end
   end
